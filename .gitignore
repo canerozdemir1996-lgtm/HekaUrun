@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+
+.venv/
+.venv-mac/
+build/
+dist/
+*.spec
+
+settings.json
+product_index.sqlite
+rename_log.jsonl
+tmp_*.xlsx
+*_mac_build_source.zip
+
+.DS_Store

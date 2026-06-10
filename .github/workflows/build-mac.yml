@@ -1,0 +1,40 @@
+name: Build macOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-mac:
+    name: Build UrunYonetimMasasi_v3.app
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Make build script executable
+        run: chmod +x build_mac.sh
+
+      - name: Build app
+        run: ./build_mac.sh --clean
+
+      - name: Zip app bundle
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent UrunYonetimMasasi_v3.app UrunYonetimMasasi_v3-macOS.zip
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UrunYonetimMasasi_v3-macOS
+          path: dist/UrunYonetimMasasi_v3-macOS.zip
+          if-no-files-found: error
