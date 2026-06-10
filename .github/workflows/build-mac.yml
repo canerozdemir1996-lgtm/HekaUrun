@@ -7,6 +7,10 @@ on:
       - main
       - master
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
 jobs:
   build-mac:
     name: Build UrunYonetimMasasi_v3.app
@@ -20,6 +24,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install macOS system dependencies
+        run: |
+          brew update
+          brew install unixodbc
 
       - name: Make build script executable
         run: chmod +x build_mac.sh

@@ -82,6 +82,7 @@ python -m PyInstaller \
   --clean \
   --windowed \
   --name "$APP_NAME" \
+  --hidden-import "pyodbc" \
   "${ICON_ARG[@]}" \
   "modern_app.py"
 

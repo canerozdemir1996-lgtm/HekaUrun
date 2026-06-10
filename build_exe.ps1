@@ -18,6 +18,8 @@ $pyInstallerArgs = @(
     "--noconfirm",
     "--clean",
     "--windowed",
+    "--hidden-import",
+    "pyodbc",
     "--name",
     "UrunYonetimMasasi_v3"
 )
