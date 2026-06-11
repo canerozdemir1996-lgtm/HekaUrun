@@ -417,13 +417,6 @@ class LoadingOverlay(QWidget):
         elapsed_s = self._elapsed_s()
         pulse = 0.5 + 0.5 * math.sin(elapsed_s * 2.2)
 
-        painter.fillRect(self.rect(), QColor(248, 250, 252, 236))
-        bg = QLinearGradient(0.0, 0.0, float(width), float(height))
-        bg.setColorAt(0.0, QColor(255, 255, 255, 246))
-        bg.setColorAt(0.52, QColor(241, 247, 255, 232))
-        bg.setColorAt(1.0, QColor(232, 240, 250, 242))
-        painter.fillRect(self.rect(), QBrush(bg))
-
         panel_w = min(int(width * 0.56), 560)
         panel_h = 188
         panel = QRect(int((width - panel_w) / 2), int(height * 0.5 - panel_h / 2), panel_w, panel_h)

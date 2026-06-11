@@ -5,6 +5,7 @@ __pycache__/
 .venv-mac/
 build/
 dist/
+dist_popup/
 *.spec
 
 settings.json
