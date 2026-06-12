@@ -110,6 +110,9 @@ if [[ -f "rename_log.jsonl" && "$WITH_LOCAL_SETTINGS" == "1" ]]; then
   cp "rename_log.jsonl" "${MACOS_DIR}/rename_log.jsonl"
 fi
 
+codesign --force --deep --sign - "$APP_BUNDLE"
+codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+
 cat > "dist/BURADAKI_MAC_APP_CALISTIR.txt" <<EOF
 Programi buradan calistir:
 ${APP_NAME}.app
@@ -123,6 +126,12 @@ Gatekeeper uygulamayi engellerse:
   Uygulamaya sag tikla > Open
 veya Terminal:
   xattr -dr com.apple.quarantine "dist/${APP_NAME}.app"
+
+Cift tiklayinca hic acilmazsa Terminal'de test:
+  "dist/${APP_NAME}.app/Contents/MacOS/${APP_NAME}" --smoke-test
+
+Startup log:
+  ~/Library/Application Support/${APP_NAME}/modern_app_startup.log
 
 SQL Server ODBC kullanilacaksa Mac'e Microsoft ODBC Driver for SQL Server kurulmalidir.
 EOF

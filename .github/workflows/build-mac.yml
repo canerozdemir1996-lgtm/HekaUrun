@@ -13,8 +13,16 @@ env:
 
 jobs:
   build-mac:
-    name: Build UrunYonetimMasasi_v3.app
-    runs-on: macos-14
+    name: Build UrunYonetimMasasi_v3.app (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: intel-x64
+            runner: macos-15-intel
 
     steps:
       - name: Checkout
@@ -36,14 +44,20 @@ jobs:
       - name: Build app
         run: ./build_mac.sh --clean
 
+      - name: Smoke test packaged app
+        run: |
+          file "dist/UrunYonetimMasasi_v3.app/Contents/MacOS/UrunYonetimMasasi_v3"
+          codesign --verify --deep --strict --verbose=2 "dist/UrunYonetimMasasi_v3.app"
+          QT_QPA_PLATFORM=offscreen "dist/UrunYonetimMasasi_v3.app/Contents/MacOS/UrunYonetimMasasi_v3" --smoke-test
+
       - name: Zip app bundle
         run: |
           cd dist
-          ditto -c -k --sequesterRsrc --keepParent UrunYonetimMasasi_v3.app UrunYonetimMasasi_v3-macOS.zip
+          ditto -c -k --sequesterRsrc --keepParent UrunYonetimMasasi_v3.app UrunYonetimMasasi_v3-macOS-${{ matrix.arch }}.zip
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: UrunYonetimMasasi_v3-macOS
-          path: dist/UrunYonetimMasasi_v3-macOS.zip
+          name: UrunYonetimMasasi_v3-macOS-${{ matrix.arch }}
+          path: dist/UrunYonetimMasasi_v3-macOS-${{ matrix.arch }}.zip
           if-no-files-found: error

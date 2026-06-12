@@ -9,6 +9,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import traceback
 import uuid
 import xml.etree.ElementTree as ET
 from collections import defaultdict
@@ -149,6 +150,15 @@ BARTENDER_PRINTER_DEFAULT = "Argox CP-3140EX PPLB"
 CE_BARTENDER_TEMPLATE_OLD_DEFAULT = "K:/HEKA/000_HEKATasarÄ±mlar/009_Ãœretim TasarÄ±mlarÄ±/CE BARKOD/KÄ±sa Etiket.btw"
 CE_BARTENDER_TEMPLATE_DEFAULT = "K:/HEKA/000_HEKATasarÄ±mlar/009_Ãœretim TasarÄ±mlarÄ±/CE BARKOD/Barkodlar/Excel DEneme.btw"
 QR_BARTENDER_TEMPLATE_DEFAULT = "K:/HEKA/000_HEKATasarÄ±mlar/009_Ãœretim TasarÄ±mlarÄ±/QR KOD BARKOD/QR.btw"
+
+
+def write_startup_log(message: str) -> None:
+    try:
+        log_path = DATA_DIR / "modern_app_startup.log"
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(f"{datetime.now().isoformat(timespec='seconds')} {message}\n")
+    except OSError:
+        pass
 LEGACY_YDK_LABEL_LAYOUT = {
     "logo_x": 0,
     "logo_y": 0,
@@ -5930,10 +5940,21 @@ class ModernMainWindow(QMainWindow):
 
 
 def main() -> None:
-    app = QApplication(sys.argv)
-    window = ModernMainWindow()
-    window.show()
-    sys.exit(app.exec())
+    smoke_test = "--smoke-test" in sys.argv
+    if smoke_test:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    try:
+        app = QApplication(sys.argv)
+        if smoke_test:
+            DataEngine()
+            print("SMOKE_OK")
+            return
+        window = ModernMainWindow()
+        window.show()
+        sys.exit(app.exec())
+    except Exception:  # noqa: BLE001
+        write_startup_log(traceback.format_exc())
+        raise
 
 
 if __name__ == "__main__":

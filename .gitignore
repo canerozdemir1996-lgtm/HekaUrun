@@ -6,6 +6,7 @@ __pycache__/
 build/
 dist/
 dist_popup/
+ce_exports/
 *.spec
 
 settings.json

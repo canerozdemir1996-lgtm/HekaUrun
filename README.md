@@ -36,6 +36,13 @@ chmod +x build_mac.sh
 
 Mac build cikisi `dist/UrunYonetimMasasi_v3.app` olarak olusur. PyInstaller macOS `.app` paketini sadece macOS uzerinde uretebildigi icin Windows makineden dogrudan Mac build alinmaz. Ayni ag/disk yollarini kullanan bir Mac icin yerel ayarlari da pakete koymak istersen `./build_mac.sh --clean --with-local-settings --with-index` kullan. SQL Server ODBC ile baglanilacaksa Mac'e Microsoft ODBC Driver for SQL Server kurulmalidir.
 
+GitHub Actions Mac build iki artifact uretir:
+
+- `UrunYonetimMasasi_v3-macOS-arm64`: Apple Silicon / M1-M2-M3-M4 Mac'ler icin.
+- `UrunYonetimMasasi_v3-macOS-intel-x64`: Intel islemcili Mac'ler icin.
+
+Mac uygulamayi engellerse once sag tik > Open dene. Gerekirse Terminal'de `xattr -dr com.apple.quarantine UrunYonetimMasasi_v3.app` calistir. Cift tiklayinca hic tepki yoksa `UrunYonetimMasasi_v3.app/Contents/MacOS/UrunYonetimMasasi_v3 --smoke-test` komutu startup hatasini terminale/log dosyasina dusurur.
+
 ## Gerekli Kutuphaneler
 
 ```powershell
