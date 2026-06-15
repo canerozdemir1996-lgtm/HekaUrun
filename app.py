@@ -2261,6 +2261,13 @@ class ProductDesktopApp(tk.Tk):
             layout["photo_x"] + layout["photo_w"],
             layout["photo_y"] + layout["photo_h"],
         )
+        def safe_label_text_width(x: int, y: int, fallback_width: int = 660) -> int:
+            full_width = min(fallback_width, width - x - 24)
+            photo_guard_bottom = product_box[3] + 26
+            if x < product_box[0] and y < photo_guard_bottom:
+                return max(120, min(full_width, product_box[0] - x - 22))
+            return max(120, full_width)
+
         if image_path is not None and path_is_file(image_path):
             try:
                 product_image = Image.open(image_path)
@@ -2281,20 +2288,25 @@ class ProductDesktopApp(tk.Tk):
             )
 
         model_text = (product.model or product.code or "-").upper()
-        model_font = fitted_font(model_text, layout["model_font"], 300, bold=True)
+        model_font = fitted_font(
+            model_text,
+            layout["model_font"],
+            min(300, safe_label_text_width(layout["model_x"], layout["model_y"], 300)),
+            bold=True,
+        )
         draw.text((layout["model_x"], layout["model_y"]), model_text, fill="black", font=model_font)
 
         tr_text = (product.description_tr or product.product_type or "-").upper()
         tr_font = self.get_ydk_font(layout["tr_font"], True)
         y = layout["tr_y"]
-        for line in self.wrap_ydk_text(draw, tr_text, tr_font, 660, 2):
+        for line in self.wrap_ydk_text(draw, tr_text, tr_font, safe_label_text_width(layout["tr_x"], layout["tr_y"]), 2):
             draw.text((layout["tr_x"], y), line, fill="black", font=tr_font)
             y += max(26, layout["tr_font"] + 9)
 
         en_text = (product.description_en or "").upper()
         en_font = self.get_ydk_font(layout["en_font"], italic=True)
         y = layout["en_y"]
-        for line in self.wrap_ydk_text(draw, en_text, en_font, 660, 2):
+        for line in self.wrap_ydk_text(draw, en_text, en_font, safe_label_text_width(layout["en_x"], layout["en_y"]), 2):
             draw.text((layout["en_x"], y), line, fill="black", font=en_font)
             y += max(26, layout["en_font"] + 10)
 

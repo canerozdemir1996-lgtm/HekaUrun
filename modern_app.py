@@ -2655,6 +2655,13 @@ class DataEngine:
             draw.text((layout["logo_x"] + 12, layout["logo_y"] + 24), "HEKA", fill="black", font=self.get_ydk_font(70, True))
 
         product_box = (layout["photo_x"], layout["photo_y"], layout["photo_x"] + layout["photo_w"], layout["photo_y"] + layout["photo_h"])
+        def safe_label_text_width(x: int, y: int, fallback_width: int = 660) -> int:
+            full_width = min(fallback_width, width - x - 24)
+            photo_guard_bottom = product_box[3] + 26
+            if x < product_box[0] and y < photo_guard_bottom:
+                return max(120, min(full_width, product_box[0] - x - 22))
+            return max(120, full_width)
+
         if image_path is not None and path_is_file(image_path):
             try:
                 product_image = Image.open(image_path)
@@ -2674,13 +2681,19 @@ class DataEngine:
             (layout["model_x"], layout["model_y"]),
             model_text,
             fill="black",
-            font=fitted_font(model_text, layout["model_font"], 300, max_height=54, bold=True),
+            font=fitted_font(
+                model_text,
+                layout["model_font"],
+                min(300, safe_label_text_width(layout["model_x"], layout["model_y"], 300)),
+                max_height=54,
+                bold=True,
+            ),
         )
         tr_limit = max(layout["tr_y"] + 44, layout["en_y"] - 18)
         tr_font, tr_lines, tr_step = fitted_wrapped_lines(
             (product.description_tr or product.product_type or "-").upper(),
             layout["tr_font"],
-            660,
+            safe_label_text_width(layout["tr_x"], layout["tr_y"]),
             max(36, tr_limit - layout["tr_y"]),
             2,
             bold=True,
@@ -2693,7 +2706,7 @@ class DataEngine:
         en_font, en_lines, en_step = fitted_wrapped_lines(
             (product.description_en or "").upper(),
             layout["en_font"],
-            660,
+            safe_label_text_width(layout["en_x"], layout["en_y"]),
             max(34, en_limit - layout["en_y"]),
             2,
             italic=True,
