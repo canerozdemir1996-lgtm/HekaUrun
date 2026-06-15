@@ -2247,6 +2247,15 @@ class ProductDesktopApp(tk.Tk):
                 font = self.get_ydk_font(size, bold=bold, italic=italic)
             return font
 
+        def ellipsized_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
+            clean_text = str(text or "-")
+            if draw.textlength(clean_text, font=font) <= max_width:
+                return clean_text
+            suffix = "..."
+            while len(clean_text) > 3 and draw.textlength(clean_text.rstrip() + suffix, font=font) > max_width:
+                clean_text = clean_text[:-1].rstrip()
+            return clean_text.rstrip() + suffix
+
         logo = self.load_ydk_logo()
         if logo is not None:
             logo_copy = logo.copy()
@@ -2267,6 +2276,9 @@ class ProductDesktopApp(tk.Tk):
             if x < product_box[0] and y < photo_guard_bottom:
                 return max(120, min(full_width, product_box[0] - x - 22))
             return max(120, full_width)
+
+        def full_label_text_width(x: int, fallback_width: int = 660) -> int:
+            return max(120, min(fallback_width, width - x - 24))
 
         if image_path is not None and path_is_file(image_path):
             try:
@@ -2297,18 +2309,16 @@ class ProductDesktopApp(tk.Tk):
         draw.text((layout["model_x"], layout["model_y"]), model_text, fill="black", font=model_font)
 
         tr_text = (product.description_tr or product.product_type or "-").upper()
-        tr_font = self.get_ydk_font(layout["tr_font"], True)
-        y = layout["tr_y"]
-        for line in self.wrap_ydk_text(draw, tr_text, tr_font, safe_label_text_width(layout["tr_x"], layout["tr_y"]), 2):
-            draw.text((layout["tr_x"], y), line, fill="black", font=tr_font)
-            y += max(26, layout["tr_font"] + 9)
+        tr_y = max(layout["tr_y"], product_box[3] + 34)
+        tr_width = full_label_text_width(layout["tr_x"])
+        tr_font = fitted_font(tr_text, layout["tr_font"], tr_width, bold=True)
+        draw.text((layout["tr_x"], tr_y), ellipsized_text(tr_text, tr_font, tr_width), fill="black", font=tr_font)
 
         en_text = (product.description_en or "").upper()
-        en_font = self.get_ydk_font(layout["en_font"], italic=True)
-        y = layout["en_y"]
-        for line in self.wrap_ydk_text(draw, en_text, en_font, safe_label_text_width(layout["en_x"], layout["en_y"]), 2):
-            draw.text((layout["en_x"], y), line, fill="black", font=en_font)
-            y += max(26, layout["en_font"] + 10)
+        en_y = max(layout["en_y"], tr_y + 72)
+        en_width = full_label_text_width(layout["en_x"])
+        en_font = fitted_font(en_text, layout["en_font"], en_width, italic=True)
+        draw.text((layout["en_x"], en_y), ellipsized_text(en_text, en_font, en_width), fill="black", font=en_font)
 
         barcode = product.unit_barcode if label_type == "unit" else product.carton_barcode
         barcode_image = self.create_ean13_barcode_image(barcode, layout["barcode_w"], layout["barcode_h"])
