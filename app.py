@@ -69,40 +69,75 @@ APP_LOGO_PNG = ASSETS_DIR / "logo_white.png"
 YDK_LOGO_PNG = ASSETS_DIR / "ydk_logo.png"
 YDK_LABEL_LOGO_PNG = ASSETS_DIR / "ydk_label_logo.png"
 YDK_LABEL_ICON_PNG = ASSETS_DIR / "ydk_label_icon.png"
-YDK_LABEL_SIZE = (717, 858)
+YDK_LABEL_SIZE = (751, 837)
 DEFAULT_YDK_LABEL_LAYOUT = {
     "logo_x": 0,
     "logo_y": 0,
-    "logo_w": 350,
-    "logo_h": 145,
-    "photo_x": 360,
+    "logo_w": 370,
+    "logo_h": 130,
+    "photo_x": 386,
     "photo_y": 0,
-    "photo_w": 330,
-    "photo_h": 330,
+    "photo_w": 344,
+    "photo_h": 323,
     "model_x": 28,
-    "model_y": 190,
-    "model_font": 40,
+    "model_y": 218,
+    "model_font": 42,
     "tr_x": 31,
-    "tr_y": 312,
-    "tr_font": 32,
+    "tr_y": 350,
+    "tr_font": 31,
     "en_x": 31,
-    "en_y": 431,
+    "en_y": 470,
     "en_font": 29,
     "barcode_x": 0,
-    "barcode_y": 562,
+    "barcode_y": 594,
     "barcode_w": 390,
     "barcode_h": 138,
-    "info_x": 407,
-    "heading_y": 582,
-    "code_y": 630,
-    "producer_box_x": 398,
-    "producer_box_y": 680,
-    "producer_box_w": 314,
-    "producer_box_h": 78,
-    "producer_font": 38,
-    "footer_y": 788,
+    "info_x": 430,
+    "heading_y": 616,
+    "code_y": 666,
+    "producer_box_x": 420,
+    "producer_box_y": 706,
+    "producer_box_w": 320,
+    "producer_box_h": 80,
+    "producer_font": 46,
+    "footer_y": 795,
     "footer_font": 24,
 }
+MIGRATABLE_YDK_LABEL_LAYOUTS = (
+    {
+        "logo_x": 0, "logo_y": 0, "logo_w": 350, "logo_h": 145,
+        "photo_x": 360, "photo_y": 0, "photo_w": 330, "photo_h": 330,
+        "model_x": 28, "model_y": 190, "model_font": 40,
+        "tr_x": 31, "tr_y": 312, "tr_font": 32,
+        "en_x": 31, "en_y": 431, "en_font": 29,
+        "barcode_x": 0, "barcode_y": 562, "barcode_w": 390, "barcode_h": 138,
+        "info_x": 407, "heading_y": 582, "code_y": 630,
+        "producer_box_x": 398, "producer_box_y": 680, "producer_box_w": 314, "producer_box_h": 78,
+        "producer_font": 38, "footer_y": 788, "footer_font": 24,
+    },
+    {
+        "logo_x": 0, "logo_y": 0, "logo_w": 350, "logo_h": 145,
+        "photo_x": 360, "photo_y": 0, "photo_w": 330, "photo_h": 330,
+        "model_x": 28, "model_y": 226, "model_font": 45,
+        "tr_x": 31, "tr_y": 354, "tr_font": 36,
+        "en_x": 31, "en_y": 478, "en_font": 35,
+        "barcode_x": 0, "barcode_y": 610, "barcode_w": 390, "barcode_h": 150,
+        "info_x": 407, "heading_y": 633, "code_y": 688,
+        "producer_box_x": 398, "producer_box_y": 723, "producer_box_w": 314, "producer_box_h": 86,
+        "producer_font": 46, "footer_y": 815, "footer_font": 27,
+    },
+    {
+        "logo_x": 0, "logo_y": 0, "logo_w": 350, "logo_h": 145,
+        "photo_x": 360, "photo_y": 0, "photo_w": 330, "photo_h": 330,
+        "model_x": 28, "model_y": 214, "model_font": 40,
+        "tr_x": 31, "tr_y": 336, "tr_font": 32,
+        "en_x": 31, "en_y": 455, "en_font": 29,
+        "barcode_x": 0, "barcode_y": 586, "barcode_w": 390, "barcode_h": 138,
+        "info_x": 407, "heading_y": 606, "code_y": 654,
+        "producer_box_x": 398, "producer_box_y": 704, "producer_box_w": 314, "producer_box_h": 78,
+        "producer_font": 38, "footer_y": 788, "footer_font": 24,
+    },
+)
 LOGODATA_SQL_PROFILE_VERSION = "LOGODATA_HRMS_122_2026_05_20_SAVED_CONNECTION"
 LOGODATA_SQL_PASSWORD = os.environ.get("HEKA_LOGODATA_SQL_PASSWORD", "")
 LOGODATA_SQL_DEFAULTS = {
@@ -1824,12 +1859,24 @@ class ProductDesktopApp(tk.Tk):
         except json.JSONDecodeError:
             saved = {}
         if isinstance(saved, dict):
-            for key, value in saved.items():
-                if key in layout:
-                    try:
-                        layout[key] = int(float(value))
-                    except (TypeError, ValueError):
-                        continue
+            def saved_int(key: str) -> int | None:
+                try:
+                    text = str(saved.get(key, "")).strip()
+                    return int(float(text)) if text else None
+                except (TypeError, ValueError):
+                    return None
+
+            migratable_match = bool(saved) and any(
+                all(saved_int(key) == expected for key, expected in candidate.items())
+                for candidate in MIGRATABLE_YDK_LABEL_LAYOUTS
+            )
+            if not migratable_match:
+                for key, value in saved.items():
+                    if key in layout:
+                        try:
+                            layout[key] = int(float(value))
+                        except (TypeError, ValueError):
+                            continue
         if include_ui:
             for key, variable in getattr(self, "ydk_layout_vars", {}).items():
                 if key in layout:
@@ -2256,6 +2303,29 @@ class ProductDesktopApp(tk.Tk):
                 clean_text = clean_text[:-1].rstrip()
             return clean_text.rstrip() + suffix
 
+        def fitted_wrapped_lines(
+            text: str,
+            size: int,
+            max_width: int,
+            max_height: int,
+            max_lines: int,
+            bold: bool = False,
+            italic: bool = False,
+        ) -> tuple[ImageFont.ImageFont, list[str], int]:
+            clean_text = text or "-"
+            size = max(12, int(size))
+            while size > 12:
+                font = self.get_ydk_font(size, bold=bold, italic=italic)
+                lines = self.wrap_ydk_text(draw, clean_text, font, max_width, max_lines)
+                line_step = max(22, size + 8)
+                heights = [draw.textbbox((0, 0), line or "Ay", font=font)[3] - draw.textbbox((0, 0), line or "Ay", font=font)[1] for line in lines]
+                total_height = (len(lines) - 1) * line_step + (max(heights) if heights else 0)
+                if total_height <= max_height:
+                    return font, lines, line_step
+                size -= 2
+            font = self.get_ydk_font(size, bold=bold, italic=italic)
+            return font, self.wrap_ydk_text(draw, clean_text, font, max_width, max_lines), max(22, size + 8)
+
         logo = self.load_ydk_logo()
         if logo is not None:
             logo_copy = logo.copy()
@@ -2317,8 +2387,18 @@ class ProductDesktopApp(tk.Tk):
         en_text = (product.description_en or "").upper()
         en_y = max(layout["en_y"], tr_y + 72)
         en_width = full_label_text_width(layout["en_x"])
-        en_font = fitted_font(en_text, layout["en_font"], en_width, italic=True)
-        draw.text((layout["en_x"], en_y), ellipsized_text(en_text, en_font, en_width), fill="black", font=en_font)
+        en_font, en_lines, en_step = fitted_wrapped_lines(
+            en_text,
+            layout["en_font"],
+            en_width,
+            max(40, layout["barcode_y"] - en_y - 20),
+            2,
+            italic=True,
+        )
+        y = en_y
+        for line in en_lines:
+            draw.text((layout["en_x"], y), line, fill="black", font=en_font)
+            y += en_step
 
         barcode = product.unit_barcode if label_type == "unit" else product.carton_barcode
         barcode_image = self.create_ean13_barcode_image(barcode, layout["barcode_w"], layout["barcode_h"])

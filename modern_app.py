@@ -98,6 +98,7 @@ from app import (
     INDEX_FILE,
     LOGODATA_SQL_DEFAULTS,
     LOGODATA_SQL_PROFILE_VERSION,
+    MIGRATABLE_YDK_LABEL_LAYOUTS,
     RENAME_FILTER_OPTIONS,
     RENAME_LOG_FILE,
     SETTINGS_FILE,
@@ -590,7 +591,7 @@ class DataEngine:
 
         migratable_match = bool(saved) and any(
             all(saved_int(key) == expected for key, expected in candidate.items())
-            for candidate in (LEGACY_YDK_LABEL_LAYOUT, PREVIOUS_YDK_LABEL_LAYOUT)
+            for candidate in (*MIGRATABLE_YDK_LABEL_LAYOUTS, LEGACY_YDK_LABEL_LAYOUT, PREVIOUS_YDK_LABEL_LAYOUT)
         )
         if saved and not migratable_match:
             for key in layout:
@@ -2632,6 +2633,29 @@ class DataEngine:
                 clean_text = clean_text[:-1].rstrip()
             return clean_text.rstrip() + suffix
 
+        def fitted_wrapped_lines(
+            text: str,
+            size: int,
+            max_width: int,
+            max_height: int,
+            max_lines: int,
+            bold: bool = False,
+            italic: bool = False,
+        ) -> tuple[ImageFont.ImageFont, list[str], int]:
+            clean_text = text or "-"
+            size = max(12, int(size))
+            while size > 12:
+                font = self.get_ydk_font(size, bold=bold, italic=italic)
+                lines = self.wrap_ydk_text(draw, clean_text, font, max_width, max_lines)
+                line_step = max(22, size + 8)
+                heights = [draw.textbbox((0, 0), line or "Ay", font=font)[3] - draw.textbbox((0, 0), line or "Ay", font=font)[1] for line in lines]
+                total_height = (len(lines) - 1) * line_step + (max(heights) if heights else 0)
+                if total_height <= max_height:
+                    return font, lines, line_step
+                size -= 2
+            font = self.get_ydk_font(size, bold=bold, italic=italic)
+            return font, self.wrap_ydk_text(draw, clean_text, font, max_width, max_lines), max(22, size + 8)
+
         logo = self.load_ydk_logo()
         if logo is not None:
             logo_copy = logo.copy()
@@ -2687,8 +2711,18 @@ class DataEngine:
         en_text = (product.description_en or "").upper()
         en_y = max(layout["en_y"], tr_y + 72)
         en_width = full_label_text_width(layout["en_x"])
-        en_font = fitted_font(en_text, layout["en_font"], en_width, max_height=46, italic=True)
-        draw.text((layout["en_x"], en_y), ellipsized_text(en_text, en_font, en_width), fill="black", font=en_font)
+        en_font, en_lines, en_step = fitted_wrapped_lines(
+            en_text,
+            layout["en_font"],
+            en_width,
+            max(40, layout["barcode_y"] - en_y - 20),
+            2,
+            italic=True,
+        )
+        y = en_y
+        for line in en_lines:
+            draw.text((layout["en_x"], y), line, fill="black", font=en_font)
+            y += en_step
         barcode = product.unit_barcode if label_type == "unit" else product.carton_barcode
         barcode_image = self.create_ean13_barcode_image(barcode, layout["barcode_w"], layout["barcode_h"])
         if barcode_image is not None:
